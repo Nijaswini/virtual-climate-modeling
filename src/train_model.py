@@ -113,36 +113,153 @@ prediction_df = pd.DataFrame({
 })
 prediction_df.to_csv(OUTPUT_DIR / "test_predictions.csv", index=False)
 
-# Plot observed versus predicted values
-plt.figure(figsize=(12, 6))
-plt.plot(
-    prediction_df["Year"], prediction_df["Actual"],
-    marker="o", label="Observed"
+
+# Plot observed versus predicted values — Editorial Climate-Tech theme
+
+CREAM = "#F7F1E7"
+PAPER = "#FFFCF7"
+INK = "#302B25"
+MUTED = "#81776B"
+TERRACOTTA = "#C65D3B"
+BURNT_ORANGE = "#E68A46"
+SAGE = "#71835B"
+GOLD = "#D9AD57"
+BORDER = "#E7DACA"
+
+plt.rcParams.update({
+    "figure.facecolor": CREAM,
+    "axes.facecolor": PAPER,
+    "axes.edgecolor": BORDER,
+    "axes.labelcolor": INK,
+    "axes.titlecolor": INK,
+    "xtick.color": MUTED,
+    "ytick.color": MUTED,
+    "text.color": INK,
+    "font.family": "DejaVu Sans",
+    "font.size": 10,
+    "axes.titlesize": 16,
+    "axes.titleweight": "bold",
+    "legend.frameon": False,
+    "savefig.facecolor": CREAM,
+})
+
+fig, ax = plt.subplots(figsize=(13, 7))
+fig.subplots_adjust(top=0.82, bottom=0.15, left=0.10, right=0.97)
+
+years = prediction_df["Year"]
+
+# Highlight the gap between observed values and predictions
+ax.fill_between(
+    years,
+    prediction_df["Actual"],
+    prediction_df["Linear_Regression"],
+    color=PEACH if "PEACH" in globals() else "#F5D5C2",
+    alpha=0.28,
+    label="_nolegend_",
+    zorder=1,
 )
-plt.plot(
-    prediction_df["Year"], prediction_df["Linear_Regression"],
-    label="Linear Regression"
+
+# Observed data
+ax.plot(
+    years,
+    prediction_df["Actual"],
+    color=INK,
+    linewidth=2.7,
+    marker="o",
+    markersize=5.5,
+    markerfacecolor=BURNT_ORANGE,
+    markeredgecolor=PAPER,
+    markeredgewidth=1.2,
+    label="Observed",
+    zorder=5,
 )
-plt.plot(
-    prediction_df["Year"], prediction_df["Random_Forest"],
-    label="Random Forest"
+
+# Linear regression
+ax.plot(
+    years,
+    prediction_df["Linear_Regression"],
+    color=TERRACOTTA,
+    linewidth=2.4,
+    marker="s",
+    markersize=4,
+    label="Linear Regression",
+    zorder=4,
 )
-plt.plot(
-    prediction_df["Year"],
+
+# Random forest
+ax.plot(
+    years,
+    prediction_df["Random_Forest"],
+    color=SAGE,
+    linewidth=2.4,
+    marker="^",
+    markersize=4.5,
+    label="Random Forest",
+    zorder=3,
+)
+
+# Previous-year baseline
+ax.plot(
+    years,
     X_test["Lag_1"].to_numpy(),
-    linestyle=":",
-    label="Previous-year baseline"
+    color=GOLD,
+    linewidth=2.2,
+    linestyle="--",
+    label="Previous-year baseline",
+    zorder=2,
 )
-plt.title("Observed vs Predicted Annual Temperature Anomalies")
-plt.xlabel("Year")
-plt.ylabel("Temperature anomaly (°C)")
-plt.grid(True, alpha=0.3)
-plt.legend()
-plt.tight_layout()
+
+# Titles and supporting description
+ax.set_title(
+    "How Well Do the Models Track Temperature?",
+    loc="left",
+    pad=24,
+)
+
+ax.text(
+    0,
+    1.035,
+    "Held-out test period · Chronological split · Temperature anomaly (°C)",
+    transform=ax.transAxes,
+    color=MUTED,
+    fontsize=10,
+)
+
+ax.set_xlabel("Year", labelpad=10)
+ax.set_ylabel("Temperature anomaly (°C)", labelpad=10)
+
+# Subtle grid and clean borders
+ax.grid(axis="y", color=BORDER, linewidth=0.8)
+ax.grid(axis="x", visible=False)
+
+for side in ["top", "right"]:
+    ax.spines[side].set_visible(False)
+
+for side in ["left", "bottom"]:
+    ax.spines[side].set_color(BORDER)
+
+ax.tick_params(axis="both", length=0, pad=8)
+
+ax.legend(
+    loc="upper left",
+    bbox_to_anchor=(0, 1.005),
+    ncol=2,
+)
+
+# Add a clear scientific interpretation
+fig.text(
+    0.10,
+    0.045,
+    "Note: Predictions are evaluated on later years not used for training. "
+    "Visual agreement does not establish forecasting skill.",
+    fontsize=8.5,
+    color=MUTED,
+)
 
 plot_path = OUTPUT_DIR / "model_predictions.png"
-plt.savefig(plot_path, dpi=150)
+fig.savefig(plot_path, dpi=200, bbox_inches="tight")
 plt.show()
+plt.close(fig)
 
 print("\nSaved model comparison:", OUTPUT_DIR / "model_comparison.csv")
 print("Saved test predictions:", OUTPUT_DIR / "test_predictions.csv")
